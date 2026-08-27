@@ -15,8 +15,8 @@ export interface HostComponentSnippetInput {
   componentImport?: string;
   /** Whether the template reaches the component through `*ngComponentOutlet` rather than a tag. */
   viaComponentOutlet: boolean;
-  /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
-  standalone: boolean;
+  /** `false` for a `standalone: false` component, `true` for standalone, `undefined` when unknown. */
+  standalone?: boolean;
   /** NgModules the story's `moduleMetadata` lists, which stand in for a non-standalone component. */
   ngModules?: { names: string[]; importStatements: string[] };
   /** Output binding names, each of which needs a handler for the template to compile. */
@@ -64,10 +64,11 @@ export const buildHostComponentSnippet = ({
   outputs,
   fields = [],
 }: HostComponentSnippetInput): HostComponentSnippet => {
-  // A `standalone: false` component is only reachable through its declaring NgModule, which static
+  // A `standalone: false` or unknown component is only reachable through its declaring NgModule, which static
   // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
   // best claim; without them the tag path leaves `imports` empty and warns why instead.
-  const importable = viaComponentOutlet || standalone;
+  const isStandalone = standalone === true;
+  const importable = viaComponentOutlet || isStandalone;
   const moduleNames = importable ? [] : (ngModules?.names ?? []);
   const imports = [
     ...(viaComponentOutlet ? ["import { NgComponentOutlet } from '@angular/common';"] : []),
@@ -80,7 +81,7 @@ export const buildHostComponentSnippet = ({
   // so the directive is what the host declares and the class has to be reachable from the template.
   const declared = viaComponentOutlet
     ? 'NgComponentOutlet'
-    : standalone
+    : isStandalone
       ? componentName
       : moduleNames.join(', ');
   const members = [
@@ -105,9 +106,13 @@ export const buildHostComponentSnippet = ({
   // it into scope; it still shows the bindings the story sets, so it stays with the caveat attached.
   const warning =
     !importable && moduleNames.length === 0
-      ? `${componentName} is declared with \`standalone: false\`, so it cannot be listed in the ` +
-        `host component's \`imports\`. Add the NgModule that declares and exports ` +
-        `${componentName} to \`imports\` to make this snippet compile.`
+      ? standalone === false
+        ? `${componentName} is declared with \`standalone: false\`, so it cannot be listed in the ` +
+          `host component's \`imports\`. Add the NgModule that declares and exports ` +
+          `${componentName} to \`imports\` to make this snippet compile.`
+        : `Could not determine whether ${componentName} is standalone, so it was not added to ` +
+          `\`imports\`. Add ${componentName} (or the NgModule that declares it) to \`imports\` to ` +
+          `make this snippet compile.`
       : importable && componentImport === undefined
         ? `${componentName} is declared in the story file, so the snippet references it without importing it.`
         : undefined;

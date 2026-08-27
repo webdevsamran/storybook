@@ -105,7 +105,7 @@ describe('buildDocgenPayload', () => {
     expect(payload?.angularComponentMeta).toEqual({
       name: 'ButtonComponent',
       selector: undefined,
-      standalone: true,
+      standalone: undefined,
       inputs: ['label'],
       outputs: [],
       enums: [],
@@ -115,13 +115,19 @@ describe('buildDocgenPayload', () => {
     expect(payload?.error).toBeUndefined();
   });
 
-  it('marks the snippet meta non-standalone only for an explicit `standalone: false`', () => {
+  it('preserves standalone: false, standalone: true, and standalone: undefined', () => {
     givenStoryFile();
-    const manager = managerReturning(metaFor(componentEntry({ standalone: false })));
+    const managerFalse = managerReturning(metaFor(componentEntry({ standalone: false })));
+    const payloadFalse = buildDocgenPayload({ entry }, context(managerFalse));
+    expect(payloadFalse?.angularComponentMeta?.standalone).toBe(false);
 
-    const payload = buildDocgenPayload({ entry }, context(manager));
+    const managerTrue = managerReturning(metaFor(componentEntry({ standalone: true })));
+    const payloadTrue = buildDocgenPayload({ entry }, context(managerTrue));
+    expect(payloadTrue?.angularComponentMeta?.standalone).toBe(true);
 
-    expect(payload?.angularComponentMeta?.standalone).toBe(false);
+    const managerUndefined = managerReturning(metaFor(componentEntry({})));
+    const payloadUndefined = buildDocgenPayload({ entry }, context(managerUndefined));
+    expect(payloadUndefined?.angularComponentMeta?.standalone).toBeUndefined();
   });
 
   describe('description and JSDoc tags', () => {

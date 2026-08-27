@@ -210,8 +210,8 @@ const renderStorySnippet = (
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
-  const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
-  const ngModules = snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps);
+  const ngModules =
+    snippetMeta.standalone === true ? undefined : storyNgModules(storyDecorators, deps);
   const bindings = collectBindings(snippetMeta, shape);
   // Hidden args would expand `argsToTemplate` into markup that looks complete, so the markup is
   // read without bindings then and falls back with a warning instead.

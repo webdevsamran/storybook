@@ -72,6 +72,17 @@ describe('buildHostComponentSnippet', () => {
     );
   });
 
+  it('keeps `imports` empty and warns when standalone is unknown (undefined)', () => {
+    const { snippet, warning } = build({ standalone: undefined });
+
+    expect(snippet).toContain('imports: [],');
+    expect(snippet).not.toContain('./button.component.ts');
+    expect(warning).toBe(
+      'Could not determine whether ButtonComponent is standalone, so it was not added to `imports`. ' +
+        'Add ButtonComponent (or the NgModule that declares it) to `imports` to make this snippet compile.'
+    );
+  });
+
   it('references a non-standalone component as a value under the outlet, ignoring modules', () => {
     const { snippet, warning } = build({
       standalone: false,
